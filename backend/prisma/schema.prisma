@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// 1. Tabela de Clientes (Quem compra)
+model Cliente {
+  id                Int       @id @default(autoincrement())
+  nome              String
+  email             String    @unique
+  senha             String
+  saldo_platinas    Decimal   @db.Decimal(10, 2)
+  saldo_creditos    Decimal   @db.Decimal(10, 2)
+  codigoRecuperacao String?   @db.VarChar(4)
+  ultimoLogin       DateTime?
+
+  inventario     Inventario[]
+  compras_feitas HistoricoVendas[]
+  logs           Log[]
+
+  @@map("cliente")
+}
+
+// 2. Tabela de Vendedores (Quem anuncia na loja)
+model Vendedor {
+  id                Int       @id @default(autoincrement())
+  nome              String
+  email             String    @unique
+  senha             String
+  saldo_platinas    Decimal   @db.Decimal(10, 2)
+  saldo_creditos    Decimal   @db.Decimal(10, 2)
+  codigoRecuperacao String?   @db.VarChar(4)
+  ultimoLogin       DateTime?
+
+  loja              Loja[]
+  vendas_realizadas HistoricoVendas[]
+  logs              Log[]
+
+  @@map("vendedor")
+}
+
+// 3. Tabela de Admins (Quem gerencia o sistema)
+model Admin {
+  id                Int       @id @default(autoincrement())
+  nome              String
+  email             String    @unique
+  senha             String
+  codigoRecuperacao String?   @db.VarChar(4)
+  ultimoLogin       DateTime?
+
+  logs Log[]
+
+  @@map("admin")
+}
+
+// 4. Catálogo Base e Categorias
+model Categoria {
+  id    Int    @id @default(autoincrement())
+  nome  String @unique
+  itens Item[]
+
+  @@map("categoria")
+}
+
+model Item {
+  id   Int    @id @default(autoincrement())
+  nome String
+
+  id_categoria Int
+  categoria    Categoria @relation(fields: [id_categoria], references: [id])
+
+  loja        Loja[]
+  inventarios Inventario[]
+  historico   HistoricoVendas[]
+
+  @@map("item")
+}
+
+// 5. Loja (Pertence ao Vendedor)
+model Loja {
+  id      Int  @id @default(autoincrement())
+  id_item Int
+  item    Item @relation(fields: [id_item], references: [id], onDelete: Cascade)
+
+  id_vendedor Int
+  vendedor    Vendedor @relation(fields: [id_vendedor], references: [id], onDelete: Cascade)
+
+  preco_platina Decimal @db.Decimal(10, 2)
+  preco_credito Decimal @db.Decimal(10, 2)
+  estoque       String
+  ativo         Boolean @default(true)
+
+  @@map("loja")
+}
+
+// 6. Inventário (Pertence ao Cliente)
+model Inventario {
+  id         Int      @id @default(autoincrement())
+  id_cliente Int
+  cliente    Cliente  @relation(fields: [id_cliente], references: [id], onDelete: Cascade)
+  id_item    Int
+  item       Item     @relation(fields: [id_item], references: [id], onDelete: Cascade)
+  data       DateTime @default(now())
+
+  @@map("inventario")
+}
+
+// 7. Histórico de Vendas
+model HistoricoVendas {
+  id          Int      @id @default(autoincrement())
+  data_compra DateTime @default(now())
+
+  id_comprador Int
+  comprador    Cliente @relation(fields: [id_comprador], references: [id], onDelete: Restrict)
+
+  id_vendedor Int
+  vendedor    Vendedor @relation(fields: [id_vendedor], references: [id], onDelete: Restrict)
+
+  id_item Int
+  item    Item @relation(fields: [id_item], references: [id], onDelete: Restrict)
+
+  valor_pago_platina Decimal @db.Decimal(10, 2)
+  valor_pago_credito Decimal @db.Decimal(10, 2)
+
+  @@map("historico_vendas")
+}
+
+// 8. Logs (Com 3 chaves estrangeiras opcionais)
+model Log {
+  id          Int      @id @default(autoincrement())
+  descricao   String
+  complemento String?
+  createdAt   DateTime @default(now())
+
+  id_cliente Int?
+  cliente    Cliente? @relation(fields: [id_cliente], references: [id], onDelete: Cascade)
+
+  id_vendedor Int?
+  vendedor    Vendedor? @relation(fields: [id_vendedor], references: [id], onDelete: Cascade)
+
+  id_admin Int?
+  admin    Admin? @relation(fields: [id_admin], references: [id], onDelete: Cascade)
+
+  @@map("logs")
+}
