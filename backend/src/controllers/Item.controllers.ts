@@ -1,12 +1,11 @@
-import type { Response } from "express"
-import type { Request } from "express"
+import type { Request, Response } from "express"
 import { prisma } from "../../lib/prisma.js"
-import type { AuthRequest } from "../middlewares/AuthMiddlewares.js"
 
+// Item agora é só o catálogo base (nome + categoria). Preço, estoque e status
+// "ativo" pertencem à Loja, que é o anúncio de um vendedor para esse item.
 export async function ListarItens(req: Request, res: Response) {
     try {
-        const listar = await prisma.itemLoja.findMany({
-            where: { ativo: true },
+        const listar = await prisma.item.findMany({
             include: { categoria: true }
         })
         res.status(200).json(listar)
@@ -18,18 +17,15 @@ export async function ListarItens(req: Request, res: Response) {
 
 export async function PesquisarItem(req: Request, res: Response) {
     try {
-        const { nomeItem } = req.query
+        const { nome } = req.query
 
-        if (!nomeItem || typeof nomeItem !== 'string') {
+        if (!nome || typeof nome !== 'string') {
             res.status(400).json({ error: "Parametro de pesquisa inválido." })
             return
         }
 
-        const resultados = await prisma.itemLoja.findMany({
-            where: {
-                nomeItem: { contains: nomeItem },
-                ativo: true
-            },
+        const resultados = await prisma.item.findMany({
+            where: { nome: { contains: nome } },
             include: { categoria: true }
         })
 
@@ -40,31 +36,17 @@ export async function PesquisarItem(req: Request, res: Response) {
     }
 }
 
-export async function CriarItem(req: AuthRequest, res: Response) {
+export async function CriarItem(req: Request, res: Response) {
     try {
-        const { idCategoria, nomeItem, precoPlatina, precoCredito } = req.body
+        const { id_categoria, nome } = req.body
 
-        if (!idCategoria || !nomeItem) {
+        if (!id_categoria || !nome) {
             res.status(400).json({ error: "Categoria e nome do item são obrigatórios." })
             return
         }
 
-        const criar = await prisma.itemLoja.create({
-            data: {
-                idCategoria: Number(idCategoria),
-                idUsuario: req.usuarioId!,
-                nomeItem,
-                precoPlatina: precoPlatina ?? 0,
-                precoCredito: precoCredito ?? 0
-            }
-        })
-
-        await prisma.logAuditoria.create({
-            data: {
-                idUsuario: req.usuarioId!,
-                acao: "CRIAR_ITEM",
-                tabelaAfetada: "item_loja"
-            }
+        const criar = await prisma.item.create({
+            data: { id_categoria: Number(id_categoria), nome }
         })
 
         res.status(201).json(criar)
@@ -75,26 +57,21 @@ export async function CriarItem(req: AuthRequest, res: Response) {
     }
 }
 
-export async function AtualizarItem(req: AuthRequest, res: Response) {
+export async function AtualizarItem(req: Request, res: Response) {
     try {
         const { id } = req.params
-        const { nomeItem, precoPlatina, precoCredito, idCategoria } = req.body
+        const { nome, id_categoria } = req.body
 
         if (!id) {
             res.status(404).json({ error: "ID Inválido." })
             return
         }
 
-        const atualizar = await prisma.itemLoja.update({
-            where: { idItem: Number(id) },
-            data: { nomeItem, precoPlatina, precoCredito, idCategoria }
-        })
-
-        await prisma.logAuditoria.create({
+        const atualizar = await prisma.item.update({
+            where: { id: Number(id) },
             data: {
-                idUsuario: req.usuarioId!,
-                acao: "ATUALIZAR_ITEM",
-                tabelaAfetada: "item_loja"
+                nome,
+                id_categoria: id_categoria ? Number(id_categoria) : undefined
             }
         })
 
@@ -105,9 +82,7 @@ export async function AtualizarItem(req: AuthRequest, res: Response) {
     }
 }
 
-// Ativa/desativa em vez de deletar de verdade, já que o item pode estar
-// referenciado em pedidos e inventários já existentes.
-export async function AlternarStatusItem(req: AuthRequest, res: Response) {
+export async function DeletarItem(req: Request, res: Response) {
     try {
         const { id } = req.params
 
@@ -116,29 +91,18 @@ export async function AlternarStatusItem(req: AuthRequest, res: Response) {
             return
         }
 
-        const item = await prisma.itemLoja.findUnique({ where: { idItem: Number(id) } })
+        const item = await prisma.item.findUnique({ where: { id: Number(id) } })
 
         if (!item) {
             res.status(404).json({ error: "Item não encontrado." })
             return
         }
 
-        const atualizar = await prisma.itemLoja.update({
-            where: { idItem: Number(id) },
-            data: { ativo: !item.ativo }
-        })
+        const deletar = await prisma.item.delete({ where: { id: Number(id) } })
 
-        await prisma.logAuditoria.create({
-            data: {
-                idUsuario: req.usuarioId!,
-                acao: atualizar.ativo ? "ATIVAR_ITEM" : "DESATIVAR_ITEM",
-                tabelaAfetada: "item_loja"
-            }
-        })
-
-        res.status(200).json(atualizar)
+        res.status(200).json({ mensagem: "Item deletado: ", deletar })
     } catch (error) {
-        res.status(400).json({ error: "Falha ao alterar status do item." })
+        res.status(400).json({ error: "Falha ao deletar item. Verifique se não há vendas registradas para ele." })
         return
     }
 }

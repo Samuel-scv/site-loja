@@ -15,16 +15,14 @@ export async function ListarCategorias(req: Request, res: Response) {
 
 export async function CriarCategoria(req: Request, res: Response) {
     try {
-        const { nome, descricao } = req.body
+        const { nome } = req.body
 
         if (!nome) {
             res.status(400).json({ error: "O nome da categoria é obrigatório." })
             return
         }
 
-        const criar = await prisma.categoria.create({
-            data: { nome, descricao }
-        })
+        const criar = await prisma.categoria.create({ data: { nome } })
 
         res.status(201).json(criar)
     } catch (error) {
@@ -36,7 +34,7 @@ export async function CriarCategoria(req: Request, res: Response) {
 export async function AtualizarCategoria(req: Request, res: Response) {
     try {
         const { id } = req.params
-        const { nome, descricao } = req.body
+        const { nome } = req.body
 
         if (!id) {
             res.status(404).json({ error: "ID Inválido." })
@@ -49,8 +47,8 @@ export async function AtualizarCategoria(req: Request, res: Response) {
         }
 
         const atualizar = await prisma.categoria.update({
-            where: { idCategoria: Number(id) },
-            data: { nome, descricao }
+            where: { id: Number(id) },
+            data: { nome }
         })
 
         res.status(200).json({ mensagem: "Categoria atualizada: ", atualizar })
@@ -69,18 +67,14 @@ export async function DeletarCategoria(req: Request, res: Response) {
             return
         }
 
-        const categoria = await prisma.categoria.findUnique({
-            where: { idCategoria: Number(id) }
-        })
+        const categoria = await prisma.categoria.findUnique({ where: { id: Number(id) } })
 
         if (!categoria) {
             res.status(404).json({ error: "Categoria não encontrada." })
             return
         }
 
-        const deletar = await prisma.categoria.delete({
-            where: { idCategoria: Number(id) }
-        })
+        const deletar = await prisma.categoria.delete({ where: { id: Number(id) } })
 
         res.status(200).json({ mensagem: "Categoria deletada: ", deletar })
     } catch (error) {

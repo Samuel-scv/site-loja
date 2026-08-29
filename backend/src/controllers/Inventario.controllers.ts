@@ -1,7 +1,8 @@
-import type { Request, Response } from "express"
+import type { Response } from "express"
 import { prisma } from "../../lib/prisma.js"
+import type { AuthRequest } from "../middlewares/AuthMiddlewares.js"
 
-export async function ListarInventarioTenno(req: Request, res: Response) {
+export async function ListarInventarioCliente(req: AuthRequest, res: Response) {
     try {
         const { id } = req.params
 
@@ -10,10 +11,16 @@ export async function ListarInventarioTenno(req: Request, res: Response) {
             return
         }
 
+        // cliente só pode ver o próprio inventário; admin pode ver de qualquer um
+        if (req.tipo === "CLIENTE" && req.userId !== Number(id)) {
+            res.status(403).json({ error: "Acesso negado." })
+            return
+        }
+
         const inventario = await prisma.inventario.findMany({
-            where: { idTenno: Number(id) },
-            include: { item: true },
-            orderBy: { dataAquisicao: 'desc' }
+            where: { id_cliente: Number(id) },
+            include: { item: { include: { categoria: true } } },
+            orderBy: { data: 'desc' }
         })
 
         res.status(200).json(inventario)

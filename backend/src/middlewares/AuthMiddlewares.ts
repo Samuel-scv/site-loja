@@ -1,10 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
-import type { Cargo } from "../../generated/prisma/enums.js";
 import jwt from 'jsonwebtoken'
 
+export type Tipo = "CLIENTE" | "VENDEDOR" | "ADMIN"
+
 export interface AuthRequest extends Request {
-    usuarioId?: number,
-    cargo?: Cargo
+    userId?: number,
+    tipo?: Tipo
 }
 
 export function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
@@ -17,11 +18,11 @@ export function AuthMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     const token = AuthHeader.split(" ")[1]!
     try {
         const payload = jwt.verify(token, process.env.JWT_SECRET as string) as {
-            usuarioId: number,
-            cargo: Cargo
+            userId: number,
+            tipo: Tipo
         }
-        req.usuarioId = payload.usuarioId
-        req.cargo = payload.cargo
+        req.userId = payload.userId
+        req.tipo = payload.tipo
 
         next()
     } catch (error) {
@@ -30,14 +31,14 @@ export function AuthMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     }
 }
 
-export function VerificarCargo(CargoPermitido: Cargo[]) {
+export function VerificarTipo(tiposPermitidos: Tipo[]) {
     return (req: AuthRequest, res: Response, next: NextFunction) => {
-        if (!req.cargo) {
-            res.status(403).json({ error: "acesso negado: Cargo não identificado." })
+        if (!req.tipo) {
+            res.status(403).json({ error: "acesso negado: tipo de usuário não identificado." })
             return
         }
-        if (!CargoPermitido.includes(req.cargo)) {
-            res.status(403).json({ error: "acesso negado: Cargo não pode concluir ação." })
+        if (!tiposPermitidos.includes(req.tipo)) {
+            res.status(403).json({ error: "acesso negado: você não pode concluir essa ação." })
             return
         }
         next()
