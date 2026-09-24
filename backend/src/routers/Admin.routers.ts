@@ -4,9 +4,7 @@ import { AuthMiddleware, VerificarTipo } from "../middlewares/AuthMiddlewares.js
 
 const router = Router()
 
-router.use(AuthMiddleware, VerificarTipo(["ADMIN"]))
-
 router.post("/criar", CriarAdmin)
-router.get("/listar", ListarAdmins)
+router.get("/listar", AuthMiddleware, VerificarTipo(["ADMIN"]), ListarAdmins)
 
 export default router
