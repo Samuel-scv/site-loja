@@ -9,15 +9,28 @@ export interface AuthRequest extends Request {
 }
 
 export function AuthMiddleware(req: AuthRequest, res: Response, next: NextFunction) {
+    const segredo = process.env.JWT_SECRET
+    if (!segredo) {
+        console.error("JWT_SECRET não definido no .env")
+        res.status(500).json({ error: "Erro de configuração do servidor." })
+        return
+    }
+
     const AuthHeader = req.headers.authorization
-    if (!AuthHeader || !AuthHeader.startsWith('Bearer')) {
+    if (!AuthHeader || !AuthHeader.startsWith('Bearer ')) {
         res.status(403).json({ error: "Token Inválido ou expirado." })
         return
     }
 
-    const token = AuthHeader.split(" ")[1]!
+    const token = AuthHeader.split(" ")[1]
+    if (!token) {
+        res.status(403).json({ error: "Token Inválido ou expirado." })
+        return
+    }
+
     try {
-        const payload = jwt.verify(token, process.env.JWT_SECRET as string) as {
+        // só aceita o algoritmo que o jwt.sign usa por padrão
+        const payload = jwt.verify(token, segredo, { algorithms: ["HS256"] }) as {
             userId: number,
             tipo: Tipo
         }
@@ -26,7 +39,7 @@ export function AuthMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 
         next()
     } catch (error) {
-        res.status(403).json({ error: "Token Inválido ou expirado" })
+        res.status(403).json({ error: "Token Inválido ou expirado." })
         return
     }
 }
