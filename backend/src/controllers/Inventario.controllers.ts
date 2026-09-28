@@ -11,8 +11,9 @@ export async function ListarInventarioCliente(req: AuthRequest, res: Response) {
             return
         }
 
-        // cliente só pode ver o próprio inventário; admin pode ver de qualquer um
-        if (req.tipo === "CLIENTE" && req.userId !== Number(id)) {
+        // só o próprio cliente ou um admin pode ver o inventário
+        // (antes só CLIENTE era barrado, então um VENDEDOR passava)
+        if (req.tipo !== "ADMIN" && req.userId !== Number(id)) {
             res.status(403).json({ error: "Acesso negado." })
             return
         }

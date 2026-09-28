@@ -2,16 +2,26 @@ import type { Response } from "express"
 import { prisma } from "../../lib/prisma.js"
 import type { AuthRequest } from "../middlewares/AuthMiddlewares.js"
 
+// Erros de regra de negócio (saldo, estoque...) podem ser mostrados ao cliente.
+// Qualquer outro erro (Prisma, banco) vira mensagem genérica, sem vazar detalhes.
+class ErroNegocio extends Error {}
+
 // Não existe mais Pedido/carrinho pendente no schema (virou HistoricoVendas,
 // que já é o registro de uma venda concluída). Então a compra é direta:
 // debita o cliente, credita o vendedor, registra no inventário e no histórico.
 export async function ComprarItem(req: AuthRequest, res: Response) {
     try {
         const { id_loja, quantidade } = req.body
-        const qtd = Number(quantidade) || 1
 
         if (!id_loja) {
             res.status(400).json({ error: "A listagem do item é obrigatória." })
+            return
+        }
+
+        // quantidade tem que ser inteira e positiva (antes -5 passava e invertia o saldo)
+        const qtd = Number(quantidade ?? 1)
+        if (!Number.isInteger(qtd) || qtd <= 0) {
+            res.status(400).json({ error: "Quantidade inválida." })
             return
         }
 
@@ -19,33 +29,40 @@ export async function ComprarItem(req: AuthRequest, res: Response) {
             const loja = await tx.loja.findUnique({ where: { id: Number(id_loja) } })
 
             if (!loja || !loja.ativo) {
-                throw new Error("Item indisponível para compra.")
+                throw new ErroNegocio("Item indisponível para compra.")
             }
 
             const estoqueNum = Number(loja.estoque)
-            if (!Number.isNaN(estoqueNum) && estoqueNum < qtd) {
-                throw new Error("Estoque insuficiente.")
+            const controlaEstoque = !Number.isNaN(estoqueNum)
+            if (controlaEstoque && estoqueNum < qtd) {
+                throw new ErroNegocio("Estoque insuficiente.")
             }
 
             const cliente = await tx.cliente.findUnique({ where: { id: req.userId! } })
             if (!cliente) {
-                throw new Error("Cliente não encontrado.")
+                throw new ErroNegocio("Cliente não encontrado.")
             }
 
             const valorPlatina = Number(loja.preco_platina) * qtd
             const valorCredito = Number(loja.preco_credito) * qtd
 
-            if (Number(cliente.saldo_platinas) < valorPlatina || Number(cliente.saldo_creditos) < valorCredito) {
-                throw new Error("Saldo insuficiente para concluir a compra.")
-            }
-
-            await tx.cliente.update({
-                where: { id: cliente.id },
+            // a checagem de saldo é feita dentro do próprio UPDATE (atômico):
+            // se duas compras rodarem ao mesmo tempo, só uma passa e o saldo nunca fica negativo
+            const debito = await tx.cliente.updateMany({
+                where: {
+                    id: cliente.id,
+                    saldo_platinas: { gte: valorPlatina },
+                    saldo_creditos: { gte: valorCredito }
+                },
                 data: {
                     saldo_platinas: { decrement: valorPlatina },
                     saldo_creditos: { decrement: valorCredito }
                 }
             })
+
+            if (debito.count === 0) {
+                throw new ErroNegocio("Saldo insuficiente para concluir a compra.")
+            }
 
             await tx.vendedor.update({
                 where: { id: loja.id_vendedor },
@@ -55,7 +72,7 @@ export async function ComprarItem(req: AuthRequest, res: Response) {
                 }
             })
 
-            if (!Number.isNaN(estoqueNum)) {
+            if (controlaEstoque) {
                 await tx.loja.update({
                     where: { id: loja.id },
                     data: { estoque: String(estoqueNum - qtd) }
@@ -91,9 +108,13 @@ export async function ComprarItem(req: AuthRequest, res: Response) {
         })
 
         res.status(201).json({ mensagem: "Compra realizada com sucesso: ", resultado })
-    } catch (error: any) {
+    } catch (error) {
         console.error("Falha, ", error)
-        res.status(400).json({ error: error.message || "Falha ao realizar compra." })
+        if (error instanceof ErroNegocio) {
+            res.status(400).json({ error: error.message })
+            return
+        }
+        res.status(400).json({ error: "Falha ao realizar compra." })
         return
     }
 }

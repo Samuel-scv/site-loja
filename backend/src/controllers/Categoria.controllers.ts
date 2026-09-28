@@ -52,7 +52,12 @@ export async function AtualizarCategoria(req: Request, res: Response) {
         })
 
         res.status(200).json({ mensagem: "Categoria atualizada: ", atualizar })
-    } catch (error) {
+    } catch (error: any) {
+        // P2025 = registro não encontrado
+        if (error?.code === 'P2025') {
+            res.status(404).json({ error: "Categoria não encontrada." })
+            return
+        }
         res.status(400).json({ error: "Falha ao atualizar categoria." })
         return
     }

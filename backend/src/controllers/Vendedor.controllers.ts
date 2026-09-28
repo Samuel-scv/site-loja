@@ -1,6 +1,7 @@
 import type { Request, Response } from "express"
 import bcrypt from 'bcrypt'
 import { prisma } from "../../lib/prisma.js"
+import { emailEmUso } from "../../lib/emailEmUso.js"
 
 export async function CriarVendedor(req: Request, res: Response) {
     try {
@@ -8,6 +9,11 @@ export async function CriarVendedor(req: Request, res: Response) {
 
         if (!nome || !email || !senha) {
             res.status(400).json({ error: "Nome, email e senha são obrigatórios." })
+            return
+        }
+
+        if (await emailEmUso(email)) {
+            res.status(409).json({ error: "Este email já está cadastrado." })
             return
         }
 
@@ -23,8 +29,12 @@ export async function CriarVendedor(req: Request, res: Response) {
         })
 
         res.status(201).json({ mensagem: "Vendedor cadastrado: ", criar })
-    } catch (error) {
+    } catch (error: any) {
         console.error("Falha, ", error)
+        if (error?.code === 'P2002') {
+            res.status(409).json({ error: "Este email já está cadastrado." })
+            return
+        }
         res.status(400).json({ error: "Falha ao cadastrar vendedor." })
         return
     }
