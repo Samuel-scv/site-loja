@@ -7,9 +7,10 @@ datasource db {
   provider = "mysql"
 }
 
-// 1. Tabela de Clientes (Quem compra)
+// 1. Tabela de Clientes
 model Cliente {
   id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(uuid())
   nome              String
   email             String    @unique
   senha             String
@@ -20,14 +21,16 @@ model Cliente {
 
   inventario     Inventario[]
   compras_feitas HistoricoVendas[]
+  interacoes     Interacao[]
   logs           Log[]
 
   @@map("cliente")
 }
 
-// 2. Tabela de Vendedores (Quem anuncia na loja)
+// 2. Tabela de Vendedores
 model Vendedor {
   id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(uuid())
   nome              String
   email             String    @unique
   senha             String
@@ -43,9 +46,10 @@ model Vendedor {
   @@map("vendedor")
 }
 
-// 3. Tabela de Admins (Quem gerencia o sistema)
+// 3. Tabela de Admins
 model Admin {
   id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(uuid())
   nome              String
   email             String    @unique
   senha             String
@@ -67,8 +71,12 @@ model Categoria {
 }
 
 model Item {
-  id   Int    @id @default(autoincrement())
-  nome String
+  id           Int      @id @default(autoincrement())
+  nome         String
+  descricao    String?  @db.Text
+  foto         String?  @db.Text
+  destaque     Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
   id_categoria Int
   categoria    Categoria @relation(fields: [id_categoria], references: [id])
@@ -76,11 +84,12 @@ model Item {
   loja        Loja[]
   inventarios Inventario[]
   historico   HistoricoVendas[]
+  interacoes  Interacao[]
 
   @@map("item")
 }
 
-// 5. Loja (Pertence ao Vendedor)
+// 5. Loja
 model Loja {
   id      Int  @id @default(autoincrement())
   id_item Int
@@ -97,7 +106,23 @@ model Loja {
   @@map("loja")
 }
 
-// 6. Inventário (Pertence ao Cliente)
+// 6. Interações (Dúvidas e Respostas - Requisitos 6, 7 e 11)
+model Interacao {
+  id         Int      @id @default(autoincrement())
+  id_cliente Int
+  cliente    Cliente  @relation(fields: [id_cliente], references: [id], onDelete: Cascade)
+
+  id_item Int
+  item    Item @relation(fields: [id_item], references: [id], onDelete: Cascade)
+
+  pergunta  String   @db.Text
+  resposta  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@map("interacao")
+}
+
+// 7. Inventário
 model Inventario {
   id         Int      @id @default(autoincrement())
   id_cliente Int
@@ -109,7 +134,7 @@ model Inventario {
   @@map("inventario")
 }
 
-// 7. Histórico de Vendas
+// 8. Histórico de Vendas
 model HistoricoVendas {
   id          Int      @id @default(autoincrement())
   data_compra DateTime @default(now())
@@ -129,7 +154,7 @@ model HistoricoVendas {
   @@map("historico_vendas")
 }
 
-// 8. Logs (Com 3 chaves estrangeiras opcionais)
+// 9. Logs
 model Log {
   id          Int      @id @default(autoincrement())
   descricao   String
