@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { prisma } from "../../lib/prisma.js";
-import type { Tipo } from "../middlewares/AuthMiddlewares.js"
+import type { AuthRequest, Tipo } from "../middlewares/AuthMiddlewares.js"
 
 export async function Login(req: Request, res: Response) {
     try {
@@ -66,6 +66,35 @@ export async function Login(req: Request, res: Response) {
     } catch (error) {
         console.error("Falha, ", error)
         res.status(400).json({ error: "Falha no login." })
+        return
+    }
+}
+
+// Dados do usuário logado (o front usa para mostrar nome, tipo e saldos).
+// Nunca devolve a senha.
+export async function Me(req: AuthRequest, res: Response) {
+    try {
+        const basico = { id: true, nome: true, email: true }
+        const comSaldo = { ...basico, saldo_platinas: true, saldo_creditos: true }
+        let usuario
+
+        if (req.tipo === "CLIENTE") {
+            usuario = await prisma.cliente.findUnique({ where: { id: req.userId! }, select: comSaldo })
+        } else if (req.tipo === "VENDEDOR") {
+            usuario = await prisma.vendedor.findUnique({ where: { id: req.userId! }, select: comSaldo })
+        } else {
+            usuario = await prisma.admin.findUnique({ where: { id: req.userId! }, select: basico })
+        }
+
+        if (!usuario) {
+            res.status(404).json({ error: "Usuário não encontrado." })
+            return
+        }
+
+        res.status(200).json({ ...usuario, tipo: req.tipo })
+    } catch (error) {
+        console.error("Falha, ", error)
+        res.status(400).json({ error: "Falha ao buscar usuário." })
         return
     }
 }
