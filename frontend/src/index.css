@@ -1,11 +1,19 @@
-@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Bricolage Grotesque", system-ui, sans-serif;
-}
-
-body {
-  background: #e9edf2;
-  color: #16212e;
+    --color-primary: #7c3aed;
+    --color-primary-hover: #6d28d9;
+    --color-accent: #10b981;
+    --color-accent-hover: #059669;
+    --color-danger: #ef4444;
+    --color-success: #10b981;
+    --color-bg: #f5f3ff;
+    --color-bg-from: #ede9fe;
+    --color-bg-to: #d1fae5;
+    --color-surface: #ffffff;
+    --color-border: #ddd6fe;
+    --color-text: #1e1b4b;
+    --color-muted: #7c6f9e;
+    --color-nav: #2d1b69;
+    --color-nav-text: #ede9fe;
 }
