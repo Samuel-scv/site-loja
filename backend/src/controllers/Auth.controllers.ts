@@ -1,100 +1,94 @@
 import type { Request, Response } from "express";
-import bcrypt from 'bcrypt'
-import jwt from 'jsonwebtoken'
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import { prisma } from "../../lib/prisma.js";
-import type { AuthRequest, Tipo } from "../middlewares/AuthMiddlewares.js"
+import type { AuthRequest, Tipo } from "../middlewares/AuthMiddlewares.js";
 
 export async function Login(req: Request, res: Response) {
     try {
-        const { email, senha } = req.body
+        const { email, senha } = req.body;
         if (!email || !senha) {
-            res.status(400).json({ error: "Email e senha obrigatórios." })
-            return
+            res.status(400).json({ error: "Email e senha obrigatórios." });
+            return;
         }
 
-        // não existe mais uma tabela única "usuario" com cargo, então
-        // procuramos o email nas três tabelas até encontrar
-        let usuario: { id: number, nome: string, senha: string } | null = null
-        let tipo: Tipo | null = null
+        let usuario: { id: number; uuid: string; nome: string; senha: string } | null = null;
+        let tipo: Tipo | null = null;
 
-        const cliente = await prisma.cliente.findUnique({ where: { email } })
+        const cliente = await prisma.cliente.findUnique({ where: { email } });
         if (cliente) {
-            usuario = cliente
-            tipo = "CLIENTE"
+            usuario = cliente;
+            tipo = "CLIENTE";
         }
 
         if (!usuario) {
-            const vendedor = await prisma.vendedor.findUnique({ where: { email } })
+            const vendedor = await prisma.vendedor.findUnique({ where: { email } });
             if (vendedor) {
-                usuario = vendedor
-                tipo = "VENDEDOR"
+                usuario = vendedor;
+                tipo = "VENDEDOR";
             }
         }
 
         if (!usuario) {
-            const admin = await prisma.admin.findUnique({ where: { email } })
+            const admin = await prisma.admin.findUnique({ where: { email } });
             if (admin) {
-                usuario = admin
-                tipo = "ADMIN"
+                usuario = admin;
+                tipo = "ADMIN";
             }
         }
 
         if (!usuario || !tipo || !(await bcrypt.compare(senha, usuario.senha))) {
-            res.status(400).json({ error: "Email ou senha inválidos." })
-            return
+            res.status(400).json({ error: "Email ou senha inválidos." });
+            return;
         }
 
         const token = jwt.sign(
-            { userId: usuario.id, tipo },
+            { userId: usuario.id, uuid: usuario.uuid, tipo },
             process.env.JWT_SECRET as string,
             { expiresIn: "7d" }
-        )
+        );
 
         if (tipo === "CLIENTE") {
-            await prisma.cliente.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } })
+            await prisma.cliente.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } });
         } else if (tipo === "VENDEDOR") {
-            await prisma.vendedor.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } })
+            await prisma.vendedor.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } });
         } else {
-            await prisma.admin.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } })
+            await prisma.admin.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } });
         }
 
         res.status(200).json({
             mensagem: "Login efetuado com sucesso",
             token,
-            usuario: { id: usuario.id, nome: usuario.nome, tipo }
-        })
+            usuario: { id: usuario.id, uuid: usuario.uuid, nome: usuario.nome, tipo }
+        });
     } catch (error) {
-        console.error("Falha, ", error)
-        res.status(400).json({ error: "Falha no login." })
-        return
+        console.error("Falha, ", error);
+        res.status(400).json({ error: "Falha no login." });
     }
 }
 
-// Dados do usuário logado (o front usa para mostrar nome, tipo e saldos).
-// Nunca devolve a senha.
 export async function Me(req: AuthRequest, res: Response) {
     try {
-        const basico = { id: true, nome: true, email: true }
-        const comSaldo = { ...basico, saldo_platinas: true, saldo_creditos: true }
-        let usuario
+        const basico = { id: true, uuid: true, nome: true, email: true };
+        const comSaldo = { ...basico, saldo_platinas: true, saldo_creditos: true };
+        let usuario;
 
         if (req.tipo === "CLIENTE") {
-            usuario = await prisma.cliente.findUnique({ where: { id: req.userId! }, select: comSaldo })
+            usuario = await prisma.cliente.findUnique({ where: { id: req.userId! }, select: comSaldo });
         } else if (req.tipo === "VENDEDOR") {
-            usuario = await prisma.vendedor.findUnique({ where: { id: req.userId! }, select: comSaldo })
+            usuario = await prisma.vendedor.findUnique({ where: { id: req.userId! }, select: comSaldo });
         } else {
-            usuario = await prisma.admin.findUnique({ where: { id: req.userId! }, select: basico })
+            usuario = await prisma.admin.findUnique({ where: { id: req.userId! }, select: basico });
         }
 
         if (!usuario) {
-            res.status(404).json({ error: "Usuário não encontrado." })
-            return
+            res.status(404).json({ error: "Usuário não encontrado." });
+            return;
         }
 
-        res.status(200).json({ ...usuario, tipo: req.tipo })
+        res.status(200).json({ ...usuario, tipo: req.tipo });
     } catch (error) {
-        console.error("Falha, ", error)
-        res.status(400).json({ error: "Falha ao buscar usuário." })
-        return
+        console.error("Falha, ", error);
+        res.status(400).json({ error: "Falha ao buscar usuário." });
     }
 }

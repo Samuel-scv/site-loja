@@ -1,12 +1,13 @@
 import axios from "axios"
+import { lerToken } from "./sessao"
 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000"
 
 export const api = axios.create({ baseURL })
 
-// manda o token em toda requisição, se existir
+// Envia o token de autenticação em todas as requisições, se existir
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem("token")
+    const token = lerToken()
     if (token) config.headers.Authorization = `Bearer ${token}`
     return config
 })
@@ -21,7 +22,11 @@ export function decodeToken(token) {
     }
 }
 
-// pega a mensagem de erro do back (ou uma padrão se o servidor não responder)
+// Extrai a mensagem de erro da API ou retorna uma padrão
 export function mensagemErro(err) {
-    return err?.response?.data?.error ?? "erro ao conectar com o servidor"
+    return err?.response?.data?.error ?? "Erro ao conectar com o servidor."
+}
+
+export function formatarData(data) {
+    return data ? new Date(data).toLocaleDateString("pt-BR") : ""
 }

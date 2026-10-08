@@ -1,19 +1,64 @@
 @import "tailwindcss";
 
+/* Visual inspirado no Warframe Market: fundo escuro, links e botões em azul-petróleo,
+   preços em magenta e etiquetas coloridas. Todas as telas usam estes tokens. */
 @theme {
-    --color-primary: #7c3aed;
-    --color-primary-hover: #6d28d9;
-    --color-accent: #10b981;
-    --color-accent-hover: #059669;
-    --color-danger: #ef4444;
-    --color-success: #10b981;
-    --color-bg: #f5f3ff;
-    --color-bg-from: #ede9fe;
-    --color-bg-to: #d1fae5;
-    --color-surface: #ffffff;
-    --color-border: #ddd6fe;
-    --color-text: #1e1b4b;
-    --color-muted: #7c6f9e;
-    --color-nav: #2d1b69;
-    --color-nav-text: #ede9fe;
+    --color-primary: #2e9db5;
+    --color-primary-hover: #3fb6cf;
+    --color-accent: #1f9d6b;
+    --color-accent-hover: #27b57c;
+    --color-price: #ec4899;
+    --color-danger: #f0556a;
+    --color-success: #34d399;
+    --color-bg: #0d1013;
+    --color-bg-from: #0b0e11;
+    --color-bg-to: #131920;
+    --color-surface: #151a20;
+    --color-border: #252d36;
+    --color-text: #d4dde6;
+    --color-muted: #7d8996;
+    --color-nav: #0a0d10;
+    --color-nav-text: #c9d6e0;
+}
+
+@layer base {
+    body {
+        background-color: var(--color-bg);
+        color: var(--color-text);
+        font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+    }
+
+    input,
+    select,
+    textarea {
+        background-color: var(--color-bg);
+        color: var(--color-text);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-muted);
+    }
+
+    input[type="checkbox"] {
+        accent-color: var(--color-primary);
+    }
+
+    button:not(:disabled) {
+        cursor: pointer;
+    }
+
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: var(--color-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--color-border);
+        border-radius: 6px;
+    }
 }

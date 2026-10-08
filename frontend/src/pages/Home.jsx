@@ -1,87 +1,117 @@
 import { useEffect, useState } from "react"
 import { api, mensagemErro } from "../lib/api"
+import ItemCard from "../components/ItemCard"
 
-function Home({ token, user, onAtualizar }) {
-    const [listagens, setListagens] = useState([])
+function Lista({ itens, onAbrir }) {
+    return (
+        <ul className="space-y-2">
+            {itens.map((i) => <ItemCard key={i.id} item={i} onAbrir={onAbrir} />)}
+        </ul>
+    )
+}
+
+function Etiqueta({ cor, children }) {
+    const estilos = {
+        rosa: "bg-[#3d1830] text-[#ff7ac0] border-[#7a2a5c]",
+        verde: "bg-[#0f3b2c] text-[#4ade9d] border-[#1b6b4f]",
+        azul: "bg-[#12323a] text-[#5fd0e6] border-[#1f6678]",
+    }
+    return <span className={`inline-block border rounded px-2 py-0.5 text-sm ${estilos[cor]}`}>{children}</span>
+}
+
+function Home({ onAbrirItem, onNavigate }) {
+    const [destaques, setDestaques] = useState([])
+    const [recentes, setRecentes] = useState([])
+    const [resultados, setResultados] = useState(null) // null = não está pesquisando
     const [busca, setBusca] = useState("")
-    const [aviso, setAviso] = useState(null)
-    const [carregando, setCarregando] = useState(false)
+    const [erro, setErro] = useState(null)
+    const [carregando, setCarregando] = useState(true)
 
-    async function carregar(nome = "") {
+    async function carregarVitrine() {
         setCarregando(true)
+        setErro(null)
         try {
-            const res = nome
-                ? await api.get("/loja/pesquisa", { params: { nome } })
-                : await api.get("/loja/listar")
-            setListagens(res.data)
+            const [d, r] = await Promise.all([api.get("/itens/destaques"), api.get("/itens/recentes")])
+            setDestaques(d.data)
+            setRecentes(r.data)
+            setResultados(null)
         } catch (err) {
-            setAviso({ erro: true, texto: mensagemErro(err) })
+            setErro(mensagemErro(err))
         } finally {
             setCarregando(false)
         }
     }
 
-    useEffect(() => { carregar() }, [])
+    useEffect(() => { carregarVitrine() }, [])
 
-    async function comprar(id_loja) {
-        setAviso(null)
+    async function pesquisar(e) {
+        e.preventDefault()
+        if (!busca.trim()) {
+            setBusca("")
+            carregarVitrine()
+            return
+        }
+        setErro(null)
         try {
-            await api.post("/compras/criar", { id_loja, quantidade: 1 })
-            setAviso({ erro: false, texto: "compra realizada" })
-            carregar(busca)
-            onAtualizar?.()
+            const res = await api.get("/itens/pesquisa", { params: { nome: busca.trim() } })
+            setResultados(res.data)
         } catch (err) {
-            setAviso({ erro: true, texto: mensagemErro(err) })
+            setErro(mensagemErro(err))
         }
     }
 
-    return (
-        <div className="max-w-2xl mx-auto mt-12 px-4">
-            <h1 className="text-4xl font-bold text-text mb-2">Loja</h1>
-            <p className="text-muted mb-6">Itens à venda por platinas e créditos.</p>
+    function exibirDestaques() {
+        setBusca("")
+        carregarVitrine()
+    }
 
-            <form onSubmit={(e) => { e.preventDefault(); carregar(busca) }} className="mb-4 flex gap-2">
+    return (
+        <div className="max-w-6xl mx-auto mt-8 px-4 pb-16">
+            <form onSubmit={pesquisar} className="mb-8 flex flex-wrap gap-2 bg-surface border border-border rounded-lg p-3">
                 <input
-                    className="w-full border border-border rounded-lg p-2 text-text focus:outline-none focus:border-primary"
-                    placeholder="Buscar item"
+                    className="flex-1 min-w-48 border border-border rounded p-2 focus:outline-none focus:border-primary"
+                    placeholder="Filtrar por item (nome, categoria ou descrição)"
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
                 />
-                <button className="bg-primary hover:bg-primary-hover text-white rounded-lg px-4 transition-colors">buscar</button>
+                <button className="bg-primary hover:bg-primary-hover text-white rounded px-4 transition-colors">Pesquisar</button>
+                <button type="button" onClick={exibirDestaques} className="bg-[#9d2a6e] hover:bg-[#b83284] text-white rounded px-4 transition-colors">
+                    Exibir Destaques
+                </button>
             </form>
 
-            {aviso && <p className={`mb-4 text-sm ${aviso.erro ? "text-danger" : "text-success"}`}>{aviso.texto}</p>}
+            {erro && <p className="mb-4 text-sm text-danger">{erro}</p>}
             {carregando && <p className="text-muted">carregando...</p>}
-            {!carregando && listagens.length === 0 && <p className="text-muted">nenhum item à venda no momento.</p>}
 
-            <ul className="bg-surface border border-border rounded-xl divide-y divide-border">
-                {listagens.map((l) => (
-                    <li key={l.id} className="p-4 flex flex-wrap justify-between items-center gap-3">
-                        <div>
-                            <p className="text-text font-semibold">{l.item.nome}</p>
-                            <p className="text-sm text-muted">
-                                {l.item.categoria?.nome} · vendido por {l.vendedor.nome} · estoque {l.estoque}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="text-right text-sm">
-                                <p className="text-primary font-semibold">{l.preco_platina} platinas</p>
-                                <p className="text-muted">{l.preco_credito} créditos</p>
-                            </div>
-                            {user?.tipo === "CLIENTE" && (
-                                <button
-                                    onClick={() => comprar(l.id)}
-                                    className="bg-accent hover:bg-accent-hover text-white rounded-lg px-4 py-2 transition-colors"
-                                >
-                                    comprar
-                                </button>
-                            )}
-                        </div>
-                    </li>
-                ))}
-            </ul>
+            {resultados ? (
+                <>
+                    <div className="mb-3"><Etiqueta cor="azul">Resultados da pesquisa</Etiqueta></div>
+                    {resultados.length === 0
+                        ? <p className="text-muted">Nenhum item encontrado.</p>
+                        : <Lista itens={resultados} onAbrir={onAbrirItem} />}
+                </>
+            ) : (
+                !carregando && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <section>
+                            <div className="mb-3"><Etiqueta cor="rosa">Itens em destaque</Etiqueta></div>
+                            {destaques.length === 0
+                                ? <p className="text-muted">Nenhum item em destaque no momento.</p>
+                                : <Lista itens={destaques} onAbrir={onAbrirItem} />}
+                        </section>
+                        <section>
+                            <div className="mb-3"><Etiqueta cor="verde">Últimos cadastrados</Etiqueta></div>
+                            {recentes.length === 0
+                                ? <p className="text-muted">Nenhum item cadastrado.</p>
+                                : <Lista itens={recentes} onAbrir={onAbrirItem} />}
+                        </section>
+                    </div>
+                )
+            )}
 
-            {!token && <p className="mt-4 text-sm text-muted">Faça login como cliente para comprar.</p>}
+            <p className="mt-12 text-center text-sm text-muted">
+                <button onClick={() => onNavigate("admin")} className="underline hover:text-primary">Área restrita (administradores)</button>
+            </p>
         </div>
     )
 }

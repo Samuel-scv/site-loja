@@ -1,9 +1,11 @@
 import type { Request, Response } from "express"
 import { prisma } from "../../lib/prisma.js"
+import { CATEGORIAS_COM_BUILD } from "../../lib/categoriasBuild.js"
 
 export async function ListarCategorias(req: Request, res: Response) {
     try {
         const listar = await prisma.categoria.findMany({
+            where: { nome: { in: CATEGORIAS_COM_BUILD } },
             orderBy: { nome: 'asc' }
         })
         res.status(200).json(listar)

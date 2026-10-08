@@ -1,6 +1,7 @@
 import type { Response } from "express"
 import { prisma } from "../../lib/prisma.js"
 import type { AuthRequest } from "../middlewares/AuthMiddlewares.js"
+import { numeroNaoNegativo } from "../../lib/validacoes.js"
 
 // vitrine pública: só o que está ativo
 export async function ListarLoja(req: AuthRequest, res: Response) {
@@ -31,7 +32,7 @@ export async function PesquisarLoja(req: AuthRequest, res: Response) {
         const resultados = await prisma.loja.findMany({
             where: {
                 ativo: true,
-                item: { nome: { contains: nome } }
+                item: { nome: { contains: nome, mode: 'insensitive' } }
             },
             include: {
                 item: { include: { categoria: true } },
@@ -68,6 +69,11 @@ export async function CriarListagem(req: AuthRequest, res: Response) {
             return
         }
 
+        if (![preco_platina ?? 0, preco_credito ?? 0, estoque].every(numeroNaoNegativo)) {
+            res.status(400).json({ error: "Preços e estoque não podem ser negativos." })
+            return
+        }
+
         const criar = await prisma.loja.create({
             data: {
                 id_item: Number(id_item),
@@ -93,6 +99,11 @@ export async function AtualizarListagem(req: AuthRequest, res: Response) {
 
         if (!id) {
             res.status(404).json({ error: "ID Inválido." })
+            return
+        }
+
+        if (![preco_platina ?? 0, preco_credito ?? 0, estoque ?? 0].every(numeroNaoNegativo)) {
+            res.status(400).json({ error: "Preços e estoque não podem ser negativos." })
             return
         }
 

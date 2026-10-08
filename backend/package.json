@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "type": "module",
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "seed": "tsx prisma/seeds.ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+ "scripts": {
+  "dev": "tsx watch src/index.ts",
+  "seed": "tsx prisma/seeds.ts",
+  "gerar-ia": "tsx prisma/gerarIA.ts",
+  "start": "tsx src/index.ts",
+  "build": "prisma generate && prisma migrate deploy",
+  "postinstall": "prisma generate"
+},
   "author": "",
   "license": "ISC",
   "description": "",
@@ -16,12 +19,11 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
-    "prisma": "^7.9.1",
-    "tsx": "^4.23.12",
-    "typescript": "^7.0.2"
+    "@types/pg": "^8.23.1"
   },
   "dependencies": {
-    "@prisma/adapter-mariadb": "^7.9.1",
+    "@google/genai": "^2.28.0",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.9.1",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
@@ -29,6 +31,9 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
-    "zod": "^4.6.5"
+    "pg": "^8.23.1",
+    "prisma": "^7.9.1",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
   }
 }

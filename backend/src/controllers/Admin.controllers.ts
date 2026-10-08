@@ -2,6 +2,7 @@ import type { Request, Response } from "express"
 import bcrypt from 'bcrypt'
 import { prisma } from "../../lib/prisma.js"
 import { emailEmUso } from "../../lib/emailEmUso.js"
+import { validarCadastro } from "../../lib/validacoes.js"
 
 export async function CriarAdmin(req: Request, res: Response) {
     try {
@@ -9,6 +10,12 @@ export async function CriarAdmin(req: Request, res: Response) {
 
         if (!nome || !email || !senha) {
             res.status(400).json({ error: "Nome, email e senha são obrigatórios." })
+            return
+        }
+
+        const erroCadastro = validarCadastro(nome, email, senha)
+        if (erroCadastro) {
+            res.status(400).json({ error: erroCadastro })
             return
         }
 

@@ -50,19 +50,6 @@ const catalogo: { categoria: string; itens: Anuncio[] }[] = [
         ],
     },
     {
-        categoria: "Mods",
-        itens: [
-            { nome: "Serration", platina: 5, credito: 400, estoque: 30 },
-            { nome: "Vitality", platina: 0, credito: 250, estoque: 40 },
-            { nome: "Redirection", platina: 0, credito: 250, estoque: 40 },
-            { nome: "Steel Fiber", platina: 0, credito: 300, estoque: 35 },
-            { nome: "Flow", platina: 0, credito: 350, estoque: 30 },
-            { nome: "Blind Rage", platina: 8, credito: 500, estoque: 20 },
-            { nome: "Primed Continuity", platina: 25, credito: 0, estoque: 6 },
-            { nome: "Primed Flow", platina: 30, credito: 0, estoque: 5 },
-        ],
-    },
-    {
         categoria: "Companheiros",
         itens: [
             { nome: "Carrier Prime", platina: 20, credito: 0, estoque: 5 },
@@ -70,27 +57,6 @@ const catalogo: { categoria: string; itens: Anuncio[] }[] = [
             { nome: "Wyrm Prime", platina: 20, credito: 0, estoque: 4 },
             { nome: "Smeeta Kavat", platina: 30, credito: 0, estoque: 3 },
             { nome: "Sunika Kubrow", platina: 25, credito: 0, estoque: 3 },
-        ],
-    },
-    {
-        categoria: "Arcanos",
-        itens: [
-            { nome: "Arcane Energize", platina: 50, credito: 0, estoque: 5 },
-            { nome: "Arcane Grace", platina: 45, credito: 0, estoque: 4 },
-            { nome: "Arcane Guardian", platina: 35, credito: 0, estoque: 6 },
-            { nome: "Arcane Strike", platina: 25, credito: 0, estoque: 6 },
-            { nome: "Arcane Avenger", platina: 20, credito: 0, estoque: 8 },
-        ],
-    },
-    {
-        categoria: "Recursos",
-        itens: [
-            { nome: "Forma", platina: 0, credito: 900, estoque: 25 },
-            { nome: "Orokin Cell", platina: 0, credito: 600, estoque: 50 },
-            { nome: "Neural Sensors", platina: 0, credito: 700, estoque: 40 },
-            { nome: "Neurodes", platina: 0, credito: 550, estoque: 40 },
-            { nome: "Argon Crystal", platina: 0, credito: 800, estoque: 30 },
-            { nome: "Ferrite (x1000)", platina: 0, credito: 200, estoque: 100 },
         ],
     },
 ]
@@ -230,6 +196,12 @@ async function main() {
             })
         }
     }
+
+    // ---------- DESTAQUES (vão para a página inicial) ----------
+    await prisma.item.updateMany({
+        where: { nome: { in: ["Excalibur Prime", "Saryn Prime", "Soma Prime", "Rubico Prime"] } },
+        data: { destaque: true },
+    })
 
     // ---------- INVENTÁRIO DE EXEMPLO ----------
     const inventario = [

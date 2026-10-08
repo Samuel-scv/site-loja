@@ -2,6 +2,7 @@ import type { Request, Response } from "express"
 import bcrypt from 'bcrypt'
 import { prisma } from "../../lib/prisma.js"
 import { emailEmUso } from "../../lib/emailEmUso.js"
+import { validarCadastro } from "../../lib/validacoes.js"
 
 export async function CriarVendedor(req: Request, res: Response) {
     try {
@@ -9,6 +10,12 @@ export async function CriarVendedor(req: Request, res: Response) {
 
         if (!nome || !email || !senha) {
             res.status(400).json({ error: "Nome, email e senha são obrigatórios." })
+            return
+        }
+
+        const erroCadastro = validarCadastro(nome, email, senha)
+        if (erroCadastro) {
+            res.status(400).json({ error: erroCadastro })
             return
         }
 
@@ -66,7 +73,7 @@ export async function PesquisarVendedor(req: Request, res: Response) {
         }
 
         const resultados = await prisma.vendedor.findMany({
-            where: { nome: { contains: nome } },
+            where: { nome: { contains: nome, mode: 'insensitive' } },
             select: { id: true, nome: true, email: true }
         })
 
