@@ -2,6 +2,7 @@ import type { Response } from "express"
 import { prisma } from "../../lib/prisma.js"
 import type { AuthRequest } from "../middlewares/AuthMiddlewares.js"
 import { numeroNaoNegativo } from "../../lib/validacoes.js"
+import { filtroCategoriasBuild } from "../../lib/categoriasBuild.js"
 
 // vitrine pública: só o que está ativo
 export async function ListarLoja(req: AuthRequest, res: Response) {
@@ -16,6 +17,25 @@ export async function ListarLoja(req: AuthRequest, res: Response) {
         res.status(200).json(listar)
     } catch (error) {
         res.status(400).json({ error: "Falha ao listar itens à venda." })
+        return
+    }
+}
+
+// vitrine pública: anúncios mais recentes (aparecem na página inicial)
+export async function ListarRecentesLoja(req: AuthRequest, res: Response) {
+    try {
+        const listar = await prisma.loja.findMany({
+            where: { ativo: true, item: { categoria: filtroCategoriasBuild } },
+            include: {
+                item: { include: { categoria: true } },
+                vendedor: { select: { id: true, nome: true } }
+            },
+            orderBy: { id: 'desc' },
+            take: 8
+        })
+        res.status(200).json(listar)
+    } catch (error) {
+        res.status(400).json({ error: "Falha ao listar anúncios recentes." })
         return
     }
 }

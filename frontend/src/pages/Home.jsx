@@ -1,11 +1,36 @@
 import { useEffect, useState } from "react"
 import { api, mensagemErro } from "../lib/api"
-import ItemCard from "../components/ItemCard"
+import ItemCard, { FotoItem } from "../components/ItemCard"
 
 function Lista({ itens, onAbrir }) {
     return (
         <ul className="space-y-2">
             {itens.map((i) => <ItemCard key={i.id} item={i} onAbrir={onAbrir} />)}
+        </ul>
+    )
+}
+
+function ListaAnuncios({ anuncios, onAbrir }) {
+    return (
+        <ul className="space-y-2">
+            {anuncios.map((a) => (
+                <li key={a.id} className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg hover:border-primary transition-colors">
+                    <FotoItem item={a.item} className="w-11 h-11 rounded-full shrink-0" texto="text-lg" />
+                    <div className="flex-1 min-w-0">
+                        <button onClick={() => onAbrir(a.item.id)} className="block max-w-full truncate text-left font-semibold text-primary underline hover:text-primary-hover">
+                            {a.item.nome}
+                        </button>
+                        <p className="text-xs text-muted truncate">
+                            {a.vendedor?.nome} · {Number(a.preco_platina) > 0 && `${a.preco_platina} platinas`}
+                            {Number(a.preco_platina) > 0 && Number(a.preco_credito) > 0 && " + "}
+                            {Number(a.preco_credito) > 0 && `${a.preco_credito} créditos`} · estoque {a.estoque}
+                        </p>
+                    </div>
+                    <button onClick={() => onAbrir(a.item.id)} className="shrink-0 bg-primary hover:bg-primary-hover text-white rounded px-3 py-2 text-sm transition-colors">
+                        Ver detalhes
+                    </button>
+                </li>
+            ))}
         </ul>
     )
 }
@@ -22,6 +47,7 @@ function Etiqueta({ cor, children }) {
 function Home({ onAbrirItem, onNavigate }) {
     const [destaques, setDestaques] = useState([])
     const [recentes, setRecentes] = useState([])
+    const [anuncios, setAnuncios] = useState([])
     const [resultados, setResultados] = useState(null) // null = não está pesquisando
     const [busca, setBusca] = useState("")
     const [erro, setErro] = useState(null)
@@ -31,9 +57,14 @@ function Home({ onAbrirItem, onNavigate }) {
         setCarregando(true)
         setErro(null)
         try {
-            const [d, r] = await Promise.all([api.get("/itens/destaques"), api.get("/itens/recentes")])
+            const [d, r, a] = await Promise.all([
+                api.get("/itens/destaques"),
+                api.get("/itens/recentes"),
+                api.get("/loja/recentes")
+            ])
             setDestaques(d.data)
             setRecentes(r.data)
+            setAnuncios(a.data)
             setResultados(null)
         } catch (err) {
             setErro(mensagemErro(err))
@@ -104,6 +135,12 @@ function Home({ onAbrirItem, onNavigate }) {
                             {recentes.length === 0
                                 ? <p className="text-muted">Nenhum item cadastrado.</p>
                                 : <Lista itens={recentes} onAbrir={onAbrirItem} />}
+                        </section>
+                        <section className="lg:col-span-2">
+                            <div className="mb-3"><Etiqueta cor="azul">Últimos anúncios dos vendedores</Etiqueta></div>
+                            {anuncios.length === 0
+                                ? <p className="text-muted">Nenhum anúncio publicado.</p>
+                                : <ListaAnuncios anuncios={anuncios} onAbrir={onAbrirItem} />}
                         </section>
                     </div>
                 )

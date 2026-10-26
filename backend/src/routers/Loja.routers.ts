@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { AlternarStatusListagem, AtualizarListagem, CriarListagem, ListarLoja, ListarMinhasListagens, PesquisarLoja } from "../controllers/Loja.controllers.js";
+import { AlternarStatusListagem, AtualizarListagem, CriarListagem, ListarLoja, ListarMinhasListagens, ListarRecentesLoja, PesquisarLoja } from "../controllers/Loja.controllers.js";
 import { AuthMiddleware, VerificarTipo } from "../middlewares/AuthMiddlewares.js";
 
 const router = Router()
 
 // vitrine pública
 router.get("/listar", ListarLoja)
+router.get("/recentes", ListarRecentesLoja)
 router.get("/pesquisa", PesquisarLoja)
 
 router.use(AuthMiddleware)
