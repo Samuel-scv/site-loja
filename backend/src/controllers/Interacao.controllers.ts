@@ -45,6 +45,30 @@ export async function MinhasInteracoes(req: AuthRequest, res: Response) {
     }
 }
 
+// VENDEDOR: perguntas feitas pelos clientes sobre os itens que ele tem à venda
+export async function InteracoesDoVendedor(req: AuthRequest, res: Response) {
+    try {
+        const interacoes = await prisma.interacao.findMany({
+            where: {
+                item: { loja: { some: { id_vendedor: req.userId! } } }
+            },
+            select: {
+                id: true,
+                pergunta: true,
+                resposta: true,
+                createdAt: true,
+                cliente: { select: { nome: true } },
+                item: { select: { id: true, nome: true, foto: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        res.status(200).json(interacoes);
+    } catch (error) {
+        res.status(400).json({ error: "Falha ao carregar as perguntas dos seus itens." });
+    }
+}
+
 export async function ListarTodasInteracoes(req: AuthRequest, res: Response) {
     try {
         const interacoes = await prisma.interacao.findMany({
