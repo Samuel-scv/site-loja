@@ -7,7 +7,7 @@ import Auth from "./pages/Auth"
 import Conta from "./pages/Conta"
 import Historico from "./pages/Historico"
 import Vendedor from "./pages/Vendedor"
-import PerguntasVendedor from "./pages/PerguntasVendedor"
+import PerguntasVendedor from "./pages/Perguntasvendedor"
 import Admin from "./pages/Admin"
 import { api, decodeToken } from "./lib/api"
 import { lerToken, limparSessao, salvarSessao } from "./lib/sessao"
@@ -154,7 +154,7 @@ function App() {
       )}
       {paginaAtual === "perguntas" && <Perguntas onAbrirItem={abrirItem} />}
       {paginaAtual === "auth" && <Auth onLogin={handleLogin} />}
-      {paginaAtual === "conta" && <Conta user={user} />}
+      {paginaAtual === "conta" && <Conta user={user} onAtualizar={carregarUsuario} />}
       {paginaAtual === "historico" && <Historico />}
       {paginaAtual === "vendedor" && <Vendedor user={user} />}
       {paginaAtual === "perguntas-vendedor" && <PerguntasVendedor user={user} />}
