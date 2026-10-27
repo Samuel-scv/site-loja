@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt'
 import { prisma } from "../../lib/prisma.js"
 import { emailEmUso } from "../../lib/emailEmUso.js"
 import { validarCadastro } from "../../lib/validacoes.js"
+import type { AuthRequest } from "../middlewares/AuthMiddlewares.js"
 
 export async function CriarCliente(req: Request, res: Response) {
     try {
@@ -128,5 +129,41 @@ export async function RecarregarSaldoCliente(req: Request, res: Response) {
     } catch (error) {
         res.status(400).json({ error: "Falha ao recarregar saldo." })
         return
+    }
+}
+
+
+// CLIENTE: adiciona platinas ou créditos na própria conta (recarga simulada pelo QR code do front)
+const LIMITE_RECARGA = 10000
+
+export async function AdicionarSaldoProprio(req: AuthRequest, res: Response) {
+    try {
+        const { tipo, valor } = req.body
+        const quantia = Number(valor)
+
+        if (tipo !== "platina" && tipo !== "credito") {
+            res.status(400).json({ error: "Escolha platinas ou créditos." })
+            return
+        }
+
+        if (!Number.isFinite(quantia) || quantia <= 0 || quantia > LIMITE_RECARGA) {
+            res.status(400).json({ error: `Informe um valor entre 0,01 e ${LIMITE_RECARGA}.` })
+            return
+        }
+
+        // no máximo 2 casas decimais (a coluna é Decimal(10, 2))
+        const valorFinal = Math.round(quantia * 100) / 100
+
+        const atualizado = await prisma.cliente.update({
+            where: { id: req.userId! },
+            data: tipo === "platina"
+                ? { saldo_platinas: { increment: valorFinal } }
+                : { saldo_creditos: { increment: valorFinal } },
+            select: { id: true, saldo_platinas: true, saldo_creditos: true }
+        })
+
+        res.status(200).json(atualizado)
+    } catch (error) {
+        res.status(400).json({ error: "Falha ao adicionar saldo." })
     }
 }

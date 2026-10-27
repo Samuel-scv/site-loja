@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CriarCliente, ListarClientes, PesquisarCliente, RecarregarSaldoCliente } from "../controllers/Cliente.controllers.js";
+import { AdicionarSaldoProprio, CriarCliente, ListarClientes, PesquisarCliente, RecarregarSaldoCliente } from "../controllers/Cliente.controllers.js";
 import { ListarInventarioCliente } from "../controllers/Inventario.controllers.js";
 import { AuthMiddleware, VerificarTipo } from "../middlewares/AuthMiddlewares.js";
 
@@ -14,6 +14,9 @@ router.use(AuthMiddleware)
 router.get("/listar", VerificarTipo(["ADMIN"]), ListarClientes)
 router.get("/pesquisa", VerificarTipo(["ADMIN"]), PesquisarCliente)
 router.patch("/recarregar/:id", VerificarTipo(["ADMIN"]), RecarregarSaldoCliente)
+
+// CLIENTE: adiciona saldo na própria conta
+router.patch("/adicionar-saldo", VerificarTipo(["CLIENTE"]), AdicionarSaldoProprio)
 
 // ADMIN vê qualquer inventário; CLIENTE só o próprio (checado no controller)
 router.get("/:id/inventario", VerificarTipo(["ADMIN", "CLIENTE"]), ListarInventarioCliente)
