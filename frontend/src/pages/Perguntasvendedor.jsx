@@ -30,7 +30,7 @@ function PerguntasVendedor({ user }) {
             setErro(mensagemErro(err))
         }
     }
-
+    
     if (user && user.tipo !== "VENDEDOR") {
         return <div className="max-w-sm mx-auto mt-16 text-center text-muted">esta área é só para vendedores.</div>
     }
