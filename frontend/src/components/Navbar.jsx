@@ -23,9 +23,14 @@ function Navbar({ onNavigate, user, token, onLogout }) {
                 </button>
             )}
             {user?.tipo === "VENDEDOR" && (
-                <button className={link} onClick={() => onNavigate("vendedor")}>
-                    minhas listagens
-                </button>
+                <>
+                    <button className={link} onClick={() => onNavigate("vendedor")}>
+                        minhas listagens
+                    </button>
+                    <button className={link} onClick={() => onNavigate("perguntas-vendedor")}>
+                        perguntas dos clientes
+                    </button>
+                </>
             )}
 
             {token ? (

@@ -69,6 +69,43 @@ export async function InteracoesDoVendedor(req: AuthRequest, res: Response) {
     }
 }
 
+// VENDEDOR: responde uma pergunta feita sobre um item que ele tem à venda
+export async function ResponderInteracaoDoVendedor(req: AuthRequest, res: Response) {
+    try {
+        const id = Number(req.params.id);
+        const resposta = typeof req.body.resposta === "string" ? req.body.resposta.trim() : "";
+
+        if (!Number.isInteger(id) || id <= 0) {
+            res.status(400).json({ error: "ID inválido." });
+            return;
+        }
+
+        if (!resposta) {
+            res.status(400).json({ error: "A resposta não pode ser vazia." });
+            return;
+        }
+
+        // só pode responder perguntas de itens que ele mesmo vende
+        const interacao = await prisma.interacao.findFirst({
+            where: { id, item: { loja: { some: { id_vendedor: req.userId! } } } }
+        });
+
+        if (!interacao) {
+            res.status(404).json({ error: "Pergunta não encontrada para os seus itens." });
+            return;
+        }
+
+        const atualizada = await prisma.interacao.update({
+            where: { id },
+            data: { resposta }
+        });
+
+        res.status(200).json(atualizada);
+    } catch (error) {
+        res.status(400).json({ error: "Falha ao responder pergunta." });
+    }
+}
+
 export async function ListarTodasInteracoes(req: AuthRequest, res: Response) {
     try {
         const interacoes = await prisma.interacao.findMany({

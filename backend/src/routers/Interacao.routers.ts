@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CriarInteracao, DeletarInteracao, InteracoesDoVendedor, ListarTodasInteracoes, MinhasInteracoes, ResponderInteracao } from "../controllers/Interacao.controllers.js";
+import { CriarInteracao, DeletarInteracao, InteracoesDoVendedor, ListarTodasInteracoes, MinhasInteracoes, ResponderInteracao, ResponderInteracaoDoVendedor } from "../controllers/Interacao.controllers.js";
 import { AuthMiddleware, VerificarTipo } from "../middlewares/AuthMiddlewares.js";
 
 const router = Router()
@@ -12,6 +12,7 @@ router.get("/minhas", VerificarTipo(["CLIENTE"]), MinhasInteracoes)
 
 // VENDEDOR logado: vê as perguntas feitas sobre os itens que ele vende
 router.get("/do-vendedor", VerificarTipo(["VENDEDOR"]), InteracoesDoVendedor)
+router.put("/responder-vendedor/:id", VerificarTipo(["VENDEDOR"]), ResponderInteracaoDoVendedor)
 
 // SOMENTE ADMIN
 router.get("/listar", VerificarTipo(["ADMIN"]), ListarTodasInteracoes)

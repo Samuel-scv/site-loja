@@ -7,12 +7,13 @@ import Auth from "./pages/Auth"
 import Conta from "./pages/Conta"
 import Historico from "./pages/Historico"
 import Vendedor from "./pages/Vendedor"
+import PerguntasVendedor from "./pages/PerguntasVendedor"
 import Admin from "./pages/Admin"
 import { api, decodeToken } from "./lib/api"
 import { lerToken, limparSessao, salvarSessao } from "./lib/sessao"
 
-const PAGINAS_PROTEGIDAS = ["conta", "historico", "vendedor", "perguntas"]
-const PAGINAS = ["home", "auth", "conta", "historico", "vendedor", "perguntas", "admin"]
+const PAGINAS_PROTEGIDAS = ["conta", "historico", "vendedor", "perguntas", "perguntas-vendedor"]
+const PAGINAS = ["home", "auth", "conta", "historico", "vendedor", "perguntas", "perguntas-vendedor", "admin"]
 
 // A navegação usa o histórico do navegador (endereços com #), então o botão
 // "voltar" do Chrome volta para a tela anterior do site e não para outra aba.
@@ -156,6 +157,7 @@ function App() {
       {paginaAtual === "conta" && <Conta user={user} />}
       {paginaAtual === "historico" && <Historico />}
       {paginaAtual === "vendedor" && <Vendedor user={user} />}
+      {paginaAtual === "perguntas-vendedor" && <PerguntasVendedor user={user} />}
     </div>
   )
 }

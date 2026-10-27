@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { api, formatarData, mensagemErro } from "../lib/api"
+import { api, mensagemErro } from "../lib/api"
 
 const campo = "w-full border border-border rounded-lg p-2 text-text focus:outline-none focus:border-primary"
 const vazio = { id_item: "", preco_platina: "", preco_credito: "", estoque: "" }
@@ -7,7 +7,6 @@ const vazio = { id_item: "", preco_platina: "", preco_credito: "", estoque: "" }
 function Vendedor({ user }) {
     const [itens, setItens] = useState([])
     const [minhas, setMinhas] = useState([])
-    const [perguntas, setPerguntas] = useState([])
     const [form, setForm] = useState(vazio)
     const [erro, setErro] = useState(null)
 
@@ -20,7 +19,6 @@ function Vendedor({ user }) {
     useEffect(() => {
         api.get("/itens/listar").then((res) => setItens(res.data)).catch(() => { })
         carregarMinhas()
-        api.get("/interacoes/do-vendedor").then((res) => setPerguntas(res.data)).catch(() => { })
     }, [])
 
     function mudar(e) {
@@ -93,28 +91,6 @@ function Vendedor({ user }) {
                     </li>
                 ))}
             </ul>
-
-            <h2 className="text-xl font-bold text-text mt-10 mb-3">Perguntas dos clientes</h2>
-            {perguntas.length === 0 && <p className="text-muted">nenhum cliente perguntou sobre seus itens ainda.</p>}
-
-            <div className="space-y-3">
-                {perguntas.map((p) => (
-                    <div key={p.id} className="bg-surface border border-border rounded-xl p-4">
-                        <div className="flex flex-wrap justify-between gap-2 text-sm">
-                            <p className="font-semibold text-text">{p.item.nome}</p>
-                            <p className="text-muted">{p.cliente.nome} · {formatarData(p.createdAt)}</p>
-                        </div>
-                        <p className="mt-2 text-text">{p.pergunta}</p>
-                        {p.resposta ? (
-                            <p className="mt-2 text-sm bg-bg border border-border rounded-lg p-2 text-text">
-                                <span className="font-semibold">Resposta:</span> {p.resposta}
-                            </p>
-                        ) : (
-                            <p className="mt-2 text-sm text-muted">ainda sem resposta</p>
-                        )}
-                    </div>
-                ))}
-            </div>
         </div>
     )
 }
