@@ -145,10 +145,6 @@ function Home({ onAbrirItem, onNavigate }) {
                     </div>
                 )
             )}
-
-            <p className="mt-12 text-center text-sm text-muted">
-                <button onClick={() => onNavigate("admin")} className="underline hover:text-primary">Área restrita (administradores)</button>
-            </p>
         </div>
     )
 }
