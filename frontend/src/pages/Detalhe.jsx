@@ -149,14 +149,14 @@ function Detalhe({ itemId, token, user, onVoltar, onNavigate, onAtualizar }) {
                         {!token && (
                             <p className="font-semibold text-text">
                                 😎 Gostou?{" "}
-                                <button onClick={() => onNavigate("auth")} className="text-primary underline">Identifique-se</button>{" "}
+                                <button onClick={() => onNavigate("auth")} className="text-primary underline">cadastre-se</button>{" "}
                                 e faça uma pergunta!
                             </p>
                         )}
 
                         {token && user?.tipo === "CLIENTE" && (
                             <form onSubmit={enviarPergunta} className="space-y-3">
-                                <h2 className="font-bold text-text">😀 Você pode fazer uma pergunta sobre este item!</h2>
+                                <h2 className="font-bold text-text">Você pode fazer uma pergunta sobre este item!</h2>
                                 <p className="bg-bg border border-border rounded-lg p-2 text-sm text-muted">{user.nome} ({user.email})</p>
                                 <textarea
                                     required

@@ -4,10 +4,11 @@ import { api, mensagemErro } from "../lib/api"
 
 // endereços que os QR codes abrem: um deles é sorteado cada vez que o QR code aparece
 // para colocar mais, é só adicionar outra linha com o link entre aspas
-const LINKS_QR = [
+const LINKS_QR = [ 
     "https://youtu.be/zL19uMsnpSU?si=4IG5b1IPk9OuYr7e",
-    "https://www.youtube.com/watch?v=eW6grMy_wnU",
-    "https://www.youtube.com/watch?v=IRZIMGxxgf8",
+    "https://www.youtube.com/watch?v=paxfXEDBE80",
+    "https://www.youtube.com/watch?v=UHb-zekohac",
+    "https://www.youtube.com/watch?v=BbeeuzU5Qc8",
 ]
 
 function sortearLink() {
