@@ -64,8 +64,8 @@ const catalogo: { categoria: string; itens: Anuncio[] }[] = [
 // Item.nome não é único no schema, então procuramos antes de criar.
 // Assim dá para rodar o seed várias vezes sem duplicar nada.
 async function garantirItem(nome: string, id_categoria: number) {
-    const existente = await prisma.item.findFirst({ where: { nome, id_categoria } })
-    return existente ?? prisma.item.create({ data: { nome, id_categoria } })
+const existente = await prisma.item.findFirst({ where: { nome, id_categoria } })
+return existente ?? prisma.item.create({ data: { nome, id_categoria } })
 }
 
 async function garantirListagem(dados: {
@@ -75,162 +75,174 @@ async function garantirListagem(dados: {
     preco_credito: number
     estoque: string
 }) {
-    const existente = await prisma.loja.findFirst({
-        where: { id_item: dados.id_item, id_vendedor: dados.id_vendedor },
-    })
-    if (!existente) await prisma.loja.create({ data: { ...dados, ativo: true } })
+const existente = await prisma.loja.findFirst({
+    where: { id_item: dados.id_item, id_vendedor: dados.id_vendedor },
+})
+if (!existente) await prisma.loja.create({ data: { ...dados, ativo: true } })
 }
 
 async function main() {
-    console.log("Iniciando seed...")
+console.log("Iniciando seed...")
 
-    // ---------- ADMIN ----------
-    const senhaAdmin = await bcrypt.hash("admin123", 10)
-    const admin = await prisma.admin.upsert({
-        where: { email: "admin@lojagames.com" },
-        update: {},
-        create: {
-            nome: "Administrador Geral",
-            email: "admin@lojagames.com",
-            senha: senhaAdmin,
-        },
+// ---------- ADMIN ----------
+// E-mail e senha do admin vêm do arquivo .env (ADMIN_EMAIL e ADMIN_SENHA).
+// Assim nenhuma senha de admin fica escrita no código nem no GitHub.
+const EMAIL_ADMIN_ANTIGO = "admin@lojagames.com"
+const emailAdmin = process.env.ADMIN_EMAIL?.trim()
+const senhaAdminTexto = process.env.ADMIN_SENHA
+
+if (emailAdmin && senhaAdminTexto) {
+    const senhaAdmin = await bcrypt.hash(senhaAdminTexto, 10)
+    await prisma.admin.upsert({
+        where: { email: emailAdmin },
+        update: { senha: senhaAdmin },
+        create: { nome: "Administrador Geral", email: emailAdmin, senha: senhaAdmin },
     })
 
-    // ---------- VENDEDORES ----------
-    const senhaVendedor = await bcrypt.hash("vendedor123", 10)
-    const vendedor1 = await prisma.vendedor.upsert({
-        where: { email: "vendedor1@lojagames.com" },
-        update: {},
-        create: {
-            nome: "Loja do João",
-            email: "vendedor1@lojagames.com",
-            senha: senhaVendedor,
-            saldo_platinas: 0,
-            saldo_creditos: 0,
-        },
-    })
-
-    const vendedor2 = await prisma.vendedor.upsert({
-        where: { email: "vendedor2@lojagames.com" },
-        update: {},
-        create: {
-            nome: "Games da Maria",
-            email: "vendedor2@lojagames.com",
-            senha: senhaVendedor,
-            saldo_platinas: 0,
-            saldo_creditos: 0,
-        },
-    })
-
-    // ---------- CLIENTES ----------
-    const senhaCliente = await bcrypt.hash("cliente123", 10)
-    const cliente1 = await prisma.cliente.upsert({
-        where: { email: "cliente1@lojagames.com" },
-        update: {},
-        create: {
-            nome: "Carlos Souza",
-            email: "cliente1@lojagames.com",
-            senha: senhaCliente,
-            saldo_platinas: 500,
-            saldo_creditos: 1000,
-        },
-    })
-
-    const cliente2 = await prisma.cliente.upsert({
-        where: { email: "cliente2@lojagames.com" },
-        update: {},
-        create: {
-            nome: "Ana Lima",
-            email: "cliente2@lojagames.com",
-            senha: senhaCliente,
-            saldo_platinas: 250,
-            saldo_creditos: 500,
-        },
-    })
-
-    // ---------- LIMPEZA DOS ITENS ANTIGOS (genéricos da primeira versão do seed) ----------
-    // Se algum já foi vendido, o banco impede a exclusão e ele simplesmente fica.
-    for (const nome of ["Skin Dragão Lendário", "1000 Moedas de Ouro", "Conta Nível 50"]) {
-        try {
-            await prisma.item.deleteMany({ where: { nome } })
-        } catch {
-            console.log(`Item antigo mantido (já tem vendas): ${nome}`)
-        }
+    // remove o admin padrão antigo, que estava público no código
+    if (emailAdmin !== EMAIL_ADMIN_ANTIGO) {
+        const removidos = await prisma.admin.deleteMany({ where: { email: EMAIL_ADMIN_ANTIGO } })
+        if (removidos.count > 0) console.log("Admin padrão antigo removido.")
     }
-    for (const nome of ["Skins", "Moedas do Jogo", "Contas"]) {
-        try {
-            await prisma.categoria.deleteMany({ where: { nome } })
-        } catch {
-            console.log(`Categoria antiga mantida (ainda tem itens): ${nome}`)
-        }
+} else {
+    console.log("ADMIN_EMAIL / ADMIN_SENHA não definidos no .env: nenhum admin foi criado ou alterado.")
+}
+
+// ---------- VENDEDORES ----------
+const senhaVendedor = await bcrypt.hash("vendedor123", 10)
+const vendedor1 = await prisma.vendedor.upsert({
+    where: { email: "vendedor1@lojagames.com" },
+    update: {},
+    create: {
+        nome: "Loja do João",
+        email: "vendedor1@lojagames.com",
+        senha: senhaVendedor,
+        saldo_platinas: 0,
+        saldo_creditos: 0,
+    },
+})
+
+const vendedor2 = await prisma.vendedor.upsert({
+    where: { email: "vendedor2@lojagames.com" },
+    update: {},
+    create: {
+        nome: "Games da Maria",
+        email: "vendedor2@lojagames.com",
+        senha: senhaVendedor,
+        saldo_platinas: 0,
+        saldo_creditos: 0,
+    },
+})
+
+// ---------- CLIENTES ----------
+const senhaCliente = await bcrypt.hash("cliente123", 10)
+const cliente1 = await prisma.cliente.upsert({
+    where: { email: "cliente1@lojagames.com" },
+    update: {},
+    create: {
+        nome: "Carlos Souza",
+        email: "cliente1@lojagames.com",
+        senha: senhaCliente,
+        saldo_platinas: 500,
+        saldo_creditos: 1000,
+    },
+})
+
+const cliente2 = await prisma.cliente.upsert({
+    where: { email: "cliente2@lojagames.com" },
+    update: {},
+    create: {
+        nome: "Ana Lima",
+        email: "cliente2@lojagames.com",
+        senha: senhaCliente,
+        saldo_platinas: 250,
+        saldo_creditos: 500,
+    },
+})
+
+// ---------- LIMPEZA DOS ITENS ANTIGOS (genéricos da primeira versão do seed) ----------
+// Se algum já foi vendido, o banco impede a exclusão e ele simplesmente fica.
+for (const nome of ["Skin Dragão Lendário", "1000 Moedas de Ouro", "Conta Nível 50"]) {
+    try {
+        await prisma.item.deleteMany({ where: { nome } })
+    } catch {
+        console.log(`Item antigo mantido (já tem vendas): ${nome}`)
     }
+}
+for (const nome of ["Skins", "Moedas do Jogo", "Contas"]) {
+    try {
+        await prisma.categoria.deleteMany({ where: { nome } })
+    } catch {
+        console.log(`Categoria antiga mantida (ainda tem itens): ${nome}`)
+    }
+}
 
-    // ---------- CATEGORIAS, ITENS E LISTAGENS ----------
-    // Os anúncios se alternam entre os dois vendedores.
-    const vendedores = [vendedor1, vendedor2]
-    let contador = 0
-    let totalItens = 0
-    const itensPorNome = new Map<string, number>()
+// ---------- CATEGORIAS, ITENS E LISTAGENS ----------
+// Os anúncios se alternam entre os dois vendedores.
+const vendedores = [vendedor1, vendedor2]
+let contador = 0
+let totalItens = 0
+const itensPorNome = new Map<string, number>()
 
-    for (const grupo of catalogo) {
-        const categoria = await prisma.categoria.upsert({
-            where: { nome: grupo.categoria },
-            update: {},
-            create: { nome: grupo.categoria },
+for (const grupo of catalogo) {
+    const categoria = await prisma.categoria.upsert({
+        where: { nome: grupo.categoria },
+        update: {},
+        create: { nome: grupo.categoria },
+    })
+
+    for (const anuncio of grupo.itens) {
+        const item = await garantirItem(anuncio.nome, categoria.id)
+        itensPorNome.set(anuncio.nome, item.id)
+        totalItens++
+
+        const vendedor = vendedores[contador % vendedores.length]!
+        contador++
+
+        await garantirListagem({
+            id_item: item.id,
+            id_vendedor: vendedor.id,
+            preco_platina: anuncio.platina,
+            preco_credito: anuncio.credito,
+            estoque: String(anuncio.estoque),
         })
-
-        for (const anuncio of grupo.itens) {
-            const item = await garantirItem(anuncio.nome, categoria.id)
-            itensPorNome.set(anuncio.nome, item.id)
-            totalItens++
-
-            const vendedor = vendedores[contador % vendedores.length]!
-            contador++
-
-            await garantirListagem({
-                id_item: item.id,
-                id_vendedor: vendedor.id,
-                preco_platina: anuncio.platina,
-                preco_credito: anuncio.credito,
-                estoque: String(anuncio.estoque),
-            })
-        }
     }
+}
 
-    // ---------- DESTAQUES (vão para a página inicial) ----------
-    await prisma.item.updateMany({
-        where: { nome: { in: ["Excalibur Prime", "Saryn Prime", "Soma Prime", "Rubico Prime"] } },
-        data: { destaque: true },
+// ---------- DESTAQUES (vão para a página inicial) ----------
+await prisma.item.updateMany({
+    where: { nome: { in: ["Excalibur Prime", "Saryn Prime", "Soma Prime", "Rubico Prime"] } },
+    data: { destaque: true },
+})
+
+// ---------- INVENTÁRIO DE EXEMPLO ----------
+const inventario = [
+    { id_cliente: cliente1.id, nome: "Excalibur Prime" },
+    { id_cliente: cliente1.id, nome: "Serration" },
+    { id_cliente: cliente2.id, nome: "Lex Prime" },
+    { id_cliente: cliente2.id, nome: "Forma" },
+]
+
+for (const registro of inventario) {
+    const id_item = itensPorNome.get(registro.nome)
+    if (!id_item) continue
+
+    const existente = await prisma.inventario.findFirst({
+        where: { id_cliente: registro.id_cliente, id_item },
     })
-
-    // ---------- INVENTÁRIO DE EXEMPLO ----------
-    const inventario = [
-        { id_cliente: cliente1.id, nome: "Excalibur Prime" },
-        { id_cliente: cliente1.id, nome: "Serration" },
-        { id_cliente: cliente2.id, nome: "Lex Prime" },
-        { id_cliente: cliente2.id, nome: "Forma" },
-    ]
-
-    for (const registro of inventario) {
-        const id_item = itensPorNome.get(registro.nome)
-        if (!id_item) continue
-
-        const existente = await prisma.inventario.findFirst({
-            where: { id_cliente: registro.id_cliente, id_item },
-        })
-        if (!existente) {
-            await prisma.inventario.create({ data: { id_cliente: registro.id_cliente, id_item } })
-        }
+    if (!existente) {
+        await prisma.inventario.create({ data: { id_cliente: registro.id_cliente, id_item } })
     }
+}
 
-    console.log("Seed concluído com sucesso!")
-    console.log({
-        admin: admin.email,
-        vendedores: [vendedor1.email, vendedor2.email],
-        clientes: [cliente1.email, cliente2.email],
-        categorias: catalogo.length,
-        itens: totalItens,
-    })
+console.log("Seed concluído com sucesso!")
+console.log({
+    admin: emailAdmin ?? "(não alterado)",
+    vendedores: [vendedor1.email, vendedor2.email],
+    clientes: [cliente1.email, cliente2.email],
+    categorias: catalogo.length,
+    itens: totalItens,
+})
 }
 
 main()
