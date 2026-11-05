@@ -148,7 +148,7 @@ function Detalhe({ itemId, token, user, onVoltar, onNavigate, onAtualizar }) {
                     <div className="mt-6 border-t border-border pt-4">
                         {!token && (
                             <p className="font-semibold text-text">
-                                😎 Gostou?{" "}
+                                Gostou?{" "}
                                 <button onClick={() => onNavigate("auth")} className="text-primary underline">cadastre-se</button>{" "}
                                 e faça uma pergunta!
                             </p>
