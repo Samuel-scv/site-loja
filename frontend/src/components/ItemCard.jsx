@@ -5,7 +5,7 @@ const [falhou, setFalhou] = useState(false)
 
 if (item.foto && !falhou) {
     // se a imagem não carregar (link fora do ar), cai na letra do item
-    return <img src={item.foto} alt={item.nome} loading="lazy" onError={() => setFalhou(true)} className={`object-cover ${className}`} />
+    return <img src={item.foto} alt={item.nome} loading="lazy" onError={() => setFalhou(true)} className={`object-contain p-1 bg-black/20 ${className}`} />
 }
 // sem foto cadastrada: mostra a inicial do item
 return (
@@ -19,7 +19,7 @@ return (
 function ItemCard({ item, onAbrir }) {
 return (
     <li className="flex items-center gap-3 p-3 bg-surface border border-border rounded-lg hover:border-primary transition-colors">
-        <FotoItem item={item} className="w-5 h-5 rounded-full shrink-0" texto="text-lg" />
+        <FotoItem item={item} className="w-10 h-10 rounded-full shrink-0" texto="text-lg" />
         <div className="flex-1 min-w-0">
             <button onClick={() => onAbrir(item.id)} className="block max-w-full truncate text-left font-semibold text-primary underline hover:text-primary-hover">
                 {item.nome}
